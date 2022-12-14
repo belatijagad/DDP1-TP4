@@ -116,28 +116,11 @@ class OrderHandler(tk.Frame):
             if mode == 'finish' and color == 'blue': continue
             tk.Label(window, text=info_colors[color], bg=color, fg='white', width=20).grid(column=0, row=start_row+i+1, columnspan=2, pady=5)
         tk.Button(window, text='Kembali', width=20, command=window.destroy).grid(column=0, row=start_row+4, columnspan=2, pady=(20, 0))
-    def change_table(self, window, table_num, label):
-        self.table_num = table_num
-        label['text'] = f'No meja: {table_num}'
-        window.destroy()
     def table_finder(self, table_list: list):
         while True:
             table_num = random.randint(0, 9)
             if table_list[table_num] == []:
                 return table_num
-    def update_price(self, values: list, label):
-        self.bill = 0
-        for amount, data in zip(values, db.get_items()):
-            price = data[3]
-            self.bill += amount.get() * int(price)
-        label['text'] = f'Total harga: {self.bill}'
-    def submit_order(self, values: list, table_num: int):
-        if max([value.get() for value in values]) == 0:
-            messagebox.showwarning(title='Oh tidak!', message='Tolong setidaknya pesan satu makanan!')
-        else:
-            db.set_table(table_num, [self.name, values, self.bill])
-            self.main_window.destroy()
-            messagebox.showinfo(title='Berhasil!', message=f'Berhasil memesan atas nama {self.name} di meja {self.table_num}')
     def create_tables(self, window, label, menu: list, values: list, mode:str ='order', row=3, col=0):
         menu_num = 0
         previous = ''
@@ -201,7 +184,9 @@ class OrderHandler(tk.Frame):
 
 '''
     Class untuk membuat pesanan, cukup pendek karena inherit method dari OrderHandler.
-    Semuanya sudah diatur dalam kondisional OrderHandler.
+    Semuanya sudah diatur dalam kondisional OrderHandler dengan method tersendiri
+    seperti change table untuk mengubah meja, update price untuk memperbarui harga
+    setelah mengubah jumlah, dan submit order untuk mengumpulkan orderan ke database.
 '''
 class CreateOrder(OrderHandler):
     def __init__(self, name, values=[], bill=0):
@@ -210,15 +195,30 @@ class CreateOrder(OrderHandler):
         self.name = name
         self.table_num = self.table_finder(db.get_tables())
         self.display_tables(self.main_window, mode='order')
+    def change_table(self, window, table_num, label):
+        self.table_num = table_num
+        label['text'] = f'No meja: {table_num}'
+        window.destroy()
+    def update_price(self, values: list, label):
+        self.bill = 0
+        for amount, data in zip(values, db.get_items()):
+            price = data[3]
+            self.bill += amount.get() * int(price)
+        label['text'] = f'Total harga: {self.bill}'
+    def submit_order(self, values: list, table_num: int):
+        if max([value.get() for value in values]) == 0:
+            messagebox.showwarning(title='Oh tidak!', message='Tolong setidaknya pesan satu makanan!')
+        else:
+            db.set_table(table_num, [self.name, values, self.bill])
+            self.main_window.destroy()
+            messagebox.showinfo(title='Berhasil!', message=f'Berhasil memesan atas nama {self.name} di meja {self.table_num}')
+
 
 '''
     Class untuk membuat pesanan, cukup pendek karena inherit method dari OrderHandler.
-    Semuanya sudah diatur dalam kondisional OrderHandler. Namun ada beberapa perbedaan
-    yang perlu diketahui, yaitu...
-
-    Memiliki method tersendiri seperti set customer untuk mengambil data pelanggan ketika
-    nomor meja yang dimiliki pelanggan dipencet, dan juga finish order untuk mengosongkan
-    meja setelah meja selesai digunakan.
+    Semuanya sudah diatur dalam kondisional OrderHandler dengam  method tersendiri seperti 
+    set customer untuk mengambil data pelanggan ketika nomor meja yang dimiliki pelanggan 
+    dipencet, dan juga finish order untuk mengosongkan meja setelah meja selesai digunakan.
 '''
 class FinishOrder(OrderHandler):
     def __init__(self):
